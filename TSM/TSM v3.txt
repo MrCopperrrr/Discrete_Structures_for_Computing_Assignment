@@ -1,0 +1,66 @@
+#include <vector>
+#include <climits>
+#include <sstream>
+#include <iostream>
+
+const int INF = INT_MAX;
+
+string Traveling(int G[20][20], int n, char start) {
+    vector<vector<int>> dp(1 << n, vector<int>(n, INF));
+    vector<vector<int>> parent(1 << n, vector<int>(n, -1));
+
+    int start_index = start - 'A';
+    dp[1 << start_index][start_index] = 0;
+
+    for (int mask = 1; mask < (1 << n); ++mask) {
+        for (int u = 0; u < n; ++u) {
+            if (mask & (1 << u)) {
+                for (int v = 0; v < n; ++v) {
+                    if (!(mask & (1 << v)) && G[u][v] != 0) {
+                        int next_mask = mask | (1 << v);
+                        int new_dist = dp[mask][u] + G[u][v];
+                        if (new_dist < dp[next_mask][v]) {
+                            dp[next_mask][v] = new_dist;
+                            parent[next_mask][v] = u;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    int end_index = -1;
+    int min_cost = INF;
+    for (int i = 0; i < n; ++i) {
+        int cost = dp[(1 << n) - 1][i] + G[i][start_index];
+        if (cost < min_cost) {
+            min_cost = cost;
+            end_index = i;
+        }
+    }
+
+    if (end_index == -1) {
+        return "No path";
+    }
+
+    vector<int> path;
+    int mask = (1 << n) - 1;
+    int current = end_index;
+    while (current != -1) {
+        path.push_back(current);
+        int temp = current;
+        current = parent[mask][current];
+        mask = mask ^ (1 << temp);
+    }
+    path.push_back(start_index);
+
+    stringstream path_stream;
+    for (int i = path.size() - 1; i >= 0; --i) {
+        path_stream << static_cast<char>('A' + path[i]);
+        if (i > 0) {
+            path_stream << " ";
+        }
+    }
+
+    return path_stream.str();
+}

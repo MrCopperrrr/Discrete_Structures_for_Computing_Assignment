@@ -1,0 +1,69 @@
+#include <vector>
+#include <climits>
+#include <algorithm>
+#include <sstream>
+#include <iostream>
+
+const int INF = INT_MAX;
+
+string Traveling(int G[20][20], int n, char start) {
+    vector<vector<int>> graph(n, vector<int>(n));
+
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            graph[i][j] = G[i][j];
+        }
+    }
+
+    vector<vector<int>> dp(1 << n, vector<int>(n, -1));
+    vector<vector<int>> parent(1 << n, vector<int>(n, -1));
+
+    auto tsp = [&](int mask, int pos, const auto &self) -> int {
+        if (mask == (1 << n) - 1) {
+            return graph[pos][0];
+        }
+
+        if (dp[mask][pos] != -1) {
+            return dp[mask][pos];
+        }
+
+        int ans = INF;
+        for (int city = 0; city < n; city++) {
+            if ((mask & (1 << city)) == 0) {
+                int newAns = graph[pos][city] + self(mask | (1 << city), city, self);
+                if (newAns < ans) {
+                    ans = newAns;
+                    parent[mask][pos] = city;
+                }
+            }
+        }
+
+        return dp[mask][pos] = ans;
+    };
+
+    int start_index = start - 'A';
+
+    int minCost = tsp(1 << start_index, start_index, tsp);
+
+    vector<int> path;
+    int mask = 1 << start_index;
+    int pos = start_index;
+
+    while (mask != (1 << n) - 1) {
+        path.push_back(pos);
+        pos = parent[mask][pos];
+        mask |= (1 << pos);
+    }
+    path.push_back(pos);
+
+    stringstream path_stream;
+    for (int i = 0; i < path.size(); ++i) {
+        path_stream << static_cast<char>('A' + path[i]);
+        if (i < path.size() - 1) {
+            path_stream << " ";
+        }
+    }
+    path_stream << " " << start;
+
+    return path_stream.str();
+}
